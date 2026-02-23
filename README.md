@@ -1,6 +1,6 @@
 # Zellet
 
-Zellet enables users to manage a secure digital wallet through a unified platform that supports account creation, balance management, peer-to-peer transfers, voucher credits, and transaction tracking. It provides a centralized, database-driven system where all wallet activities are processed, stored, and retrieved efficiently—ensuring a smooth, cashless experience without external payment gateways or fragmented financial records.
+Zellet enables users to manage a secure digital wallet through a unified platform that supports account creation, balance management, peer-to-peer transfers, voucher credits, and transaction tracking. It provides a centralized, database-driven system where all wallet activities are processed, stored, and retrieved efficiently—ensuring a smooth, cashless experience without fragmented financial records.
 
 ## Project Setup
 
