@@ -149,7 +149,7 @@ export default function Landing() {
 
                                     <div className="relative z-10">
                                         <h3 className="text-gray-400 text-sm font-semibold mb-2 uppercase tracking-wider">Total Balance</h3>
-                                        <div className="text-4xl font-heading font-extrabold text-white mb-8">$1,250.00</div>
+                                        <div className="text-4xl font-heading font-extrabold text-white mb-8">₹1,250.00</div>
                                         <button className="w-full py-4 bg-brand-primary/10 backdrop-blur-md text-blue-400 rounded-xl font-bold border border-brand-primary/20 hover:bg-brand-primary hover:text-white transition-all duration-300 flex items-center justify-center gap-2">
                                             <Wallet className="w-4 h-4" /> Add Money
                                         </button>
@@ -161,8 +161,8 @@ export default function Landing() {
                                     <h3 className="text-gray-500 text-sm font-bold mb-5 font-heading uppercase tracking-wider">Recent Transactions</h3>
                                     <div className="space-y-4">
                                         {[
-                                            { name: 'Alex Johnson', type: 'Sent', amount: '-$50.00', icon: Send, color: 'text-gray-600', code: 'Transfer', bg: 'bg-white', amountColor: 'text-gray-900' },
-                                            { name: 'Summer Promo', type: 'Voucher', amount: '+$20.00', icon: Gift, color: 'text-emerald-500', code: 'PROMO20', bg: 'bg-white', amountColor: 'text-emerald-500' },
+                                            { name: 'Alex Johnson', type: 'Sent', amount: '-₹50.00', icon: Send, color: 'text-gray-600', code: 'Transfer', bg: 'bg-white', amountColor: 'text-gray-900' },
+                                            { name: 'Summer Promo', type: 'Voucher', amount: '+₹20.00', icon: Gift, color: 'text-emerald-500', code: 'PROMO20', bg: 'bg-white', amountColor: 'text-emerald-500' },
                                         ].map((tx, i) => (
                                             <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow">
                                                 <div className="flex items-center gap-4">
