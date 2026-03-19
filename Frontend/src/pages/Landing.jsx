@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Wallet, Send, Gift, ShieldCheck, ChevronRight, Menu, X, ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useWallet } from '../hooks/useWallet';
+import logo from '../assets/logo.png';
 
 export default function Landing() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -35,8 +36,8 @@ export default function Landing() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         <Link to="/" className="flex items-center gap-3 group">
-                            <div className="w-10 h-10 rounded-xl bg-brand-primary flex items-center justify-center shadow-md shadow-brand-primary/20 group-hover:scale-105 transition-transform duration-300">
-                                <Wallet className="w-6 h-6 text-white group-hover:animate-pulse" />
+                            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-md shadow-brand-primary/20 group-hover:scale-105 transition-transform duration-300 p-1">
+                                <img src={logo} alt="Zellet Logo" className="w-full h-full object-contain group-hover:animate-pulse" />
                             </div>
                             <span className="text-2xl font-bold font-heading tracking-tight text-brand-dark">
                                 Zellet.
@@ -87,7 +88,7 @@ export default function Landing() {
                             <>
                                 <Link to="/auth" className="w-full text-left py-2 px-2 text-base font-semibold text-gray-600">Log in</Link>
                                 <Link to="/auth" className="w-full text-center py-3 px-4 text-base font-bold text-white bg-brand-primary rounded-xl shadow-md">
-                                    Get Started Free
+                                    Get Started
                                 </Link>
                             </>
                         )}
@@ -117,7 +118,7 @@ export default function Landing() {
                 <div className="opacity-0 animate-fade-in-up-delay-3 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                     <button onClick={() => navigate('/auth')} className="group relative px-8 py-4 bg-brand-dark text-white rounded-full font-bold text-lg overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_rgb(15,23,42,0.3)] hover:-translate-y-1">
                         <span className="relative flex items-center justify-center gap-2">
-                            Create Free Wallet
+                            Create Wallet
                             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </span>
                     </button>
@@ -271,8 +272,8 @@ export default function Landing() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-brand-primary flex items-center justify-center">
-                                <Wallet className="w-4 h-4 text-white" />
+                            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center p-1">
+                                <img src={logo} alt="Zellet Logo" className="w-full h-full object-contain" />
                             </div>
                             <span className="text-xl font-bold font-heading text-brand-dark">Zellet.</span>
                         </div>

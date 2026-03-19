@@ -32,6 +32,23 @@ const grantRewardPoints = async (client, userId, transactionAmount) => {
     await client.query(`UPDATE users SET tier = $1 WHERE user_id = $2`, [newTier, userId]);
 };
 
+// Get all user wallets
+router.get('/all', authenticateToken, async (req, res) => {
+    try {
+        const walletResult = await pool.query(
+            'SELECT wallet_type, balance FROM wallets WHERE user_id = $1',
+            [req.user.userId]
+        );
+        const wallets = {};
+        walletResult.rows.forEach(w => {
+            wallets[w.wallet_type.toLowerCase()] = { balance: parseFloat(w.balance) };
+        });
+        res.json(wallets);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch all wallets' });
+    }
+});
+
 // Get the user's primary wallet
 router.get('/', authenticateToken, async (req, res) => {
     try {
@@ -103,10 +120,11 @@ router.post('/transfer', authenticateToken, async (req, res) => {
         await client.query('BEGIN');
 
         // 1. Find Sender Wallet
-        const senderRes = await client.query('SELECT wallet_id, balance FROM wallets WHERE user_id = $1 AND wallet_type = $2 FOR UPDATE', [req.user.userId, 'Main']);
+        const senderRes = await client.query('SELECT wallet_id, balance, status FROM wallets WHERE user_id = $1 AND wallet_type = $2 FOR UPDATE', [req.user.userId, 'Main']);
         if (senderRes.rows.length === 0) throw new Error('Sender wallet not found');
         const senderWallet = senderRes.rows[0];
 
+        if (senderWallet.status !== 'Active') throw new Error(`Sender wallet is ${senderWallet.status.toLowerCase()}`);
         if (senderWallet.balance < amount) throw new Error('Insufficient balance');
 
         // 2. Find Receiver by Email
@@ -115,8 +133,9 @@ router.post('/transfer', authenticateToken, async (req, res) => {
         const receiverUserId = receiverUserRes.rows[0].user_id;
 
         // 3. Find Receiver Wallet
-        const receiverRes = await client.query('SELECT wallet_id FROM wallets WHERE user_id = $1 AND wallet_type = $2 FOR UPDATE', [receiverUserId, 'Main']);
+        const receiverRes = await client.query('SELECT wallet_id, status FROM wallets WHERE user_id = $1 AND wallet_type = $2 FOR UPDATE', [receiverUserId, 'Main']);
         if (receiverRes.rows.length === 0) throw new Error('Receiver wallet not found');
+        if (receiverRes.rows[0].status !== 'Active') throw new Error(`Receiver wallet is ${receiverRes.rows[0].status.toLowerCase()}`);
         const receiverWalletId = receiverRes.rows[0].wallet_id;
 
         // 4. Deduct from Sender
@@ -150,6 +169,55 @@ router.post('/transfer', authenticateToken, async (req, res) => {
         await client.query('ROLLBACK');
         console.error(err);
         res.status(400).json({ error: err.message || 'Transfer failed' });
+    } finally {
+        client.release();
+    }
+});
+
+// Internal transfer between wallets
+router.post('/internal-transfer', authenticateToken, async (req, res) => {
+    const { fromWalletType, toWalletType, amount } = req.body;
+    if (amount <= 0 || !fromWalletType || !toWalletType || fromWalletType === toWalletType) {
+        return res.status(400).json({ error: 'Invalid input' });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // 1. Check Sender Wallet
+        const senderRes = await client.query('SELECT wallet_id, balance, status FROM wallets WHERE user_id = $1 AND wallet_type = $2 FOR UPDATE', [req.user.userId, fromWalletType]);
+        if (senderRes.rows.length === 0) throw new Error('Sender wallet not found');
+        const senderWallet = senderRes.rows[0];
+
+        if (senderWallet.status !== 'Active') throw new Error(`Sender wallet is ${senderWallet.status.toLowerCase()}`);
+        if (senderWallet.balance < amount) throw new Error('Insufficient balance');
+
+        // 2. Check Receiver Wallet
+        const receiverRes = await client.query('SELECT wallet_id, status FROM wallets WHERE user_id = $1 AND wallet_type = $2 FOR UPDATE', [req.user.userId, toWalletType]);
+        if (receiverRes.rows.length === 0) throw new Error('Receiver wallet not found');
+        if (receiverRes.rows[0].status !== 'Active') throw new Error(`Receiver wallet is ${receiverRes.rows[0].status.toLowerCase()}`);
+        const receiverWalletId = receiverRes.rows[0].wallet_id;
+
+        // 3. Deduct from Sender
+        await client.query('UPDATE wallets SET balance = balance - $1 WHERE wallet_id = $2', [amount, senderWallet.wallet_id]);
+
+        // 4. Add to Receiver
+        await client.query('UPDATE wallets SET balance = balance + $1 WHERE wallet_id = $2', [amount, receiverWalletId]);
+
+        // 5. Add Logs
+        await client.query(`INSERT INTO activity_logs (user_id, action_type, description) VALUES ($1, $2, $3)`,
+            [req.user.userId, 'Internal Transfer', `Moved ₹${amount} from ${fromWalletType} to ${toWalletType}`]);
+
+        await client.query('COMMIT');
+
+        // Return updated sender balance
+        res.json({ message: 'Internal transfer successful' });
+
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error(err);
+        res.status(400).json({ error: err.message || 'Internal transfer failed' });
     } finally {
         client.release();
     }

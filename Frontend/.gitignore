@@ -27,3 +27,4 @@ Frontend/.env
 Frontend/.env.*
 Frontend/node_modules
 Frontend/dist
+.env

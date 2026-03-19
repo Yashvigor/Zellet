@@ -1,0 +1,27 @@
+{
+  "name": "zellet",
+  "version": "1.0.0",
+  "description": "Zellet enables users to manage a secure digital wallet...",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently --kill-others \"npm run dev --prefix Backend\" \"npm run dev --prefix Frontend\"",
+    "backend": "npm run dev --prefix Backend",
+    "frontend": "npm run dev --prefix Frontend",
+    "install:all": "npm install && npm install --prefix Backend && npm install --prefix Frontend"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yashvigor/Zellet.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Yashvigor/Zellet/issues"
+  },
+  "homepage": "https://github.com/Yashvigor/Zellet#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

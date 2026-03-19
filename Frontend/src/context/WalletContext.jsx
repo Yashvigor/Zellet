@@ -4,12 +4,15 @@ export const WalletContext = createContext();
 
 export const WalletProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
-    const [wallet, setWallet] = useState(null);
+    const [wallets, setWallets] = useState({ main: { balance: 0 }, savings: { balance: 0 }, reward: { balance: 0 } });
+    const [wallet, setWallet] = useState(null); // Keep for backwards compatibility if needed, or point to main
     const [rewardBalance, setRewardBalance] = useState(0);
     const [transactions, setTransactions] = useState([]);
     const [vouchers, setVouchers] = useState([]);
     const [adminData, setAdminData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
     const authFetch = async (url, options = {}) => {
         const headers = { 'Content-Type': 'application/json', ...options.headers };
@@ -17,7 +20,7 @@ export const WalletProvider = ({ children }) => {
         if (storedToken) {
             headers['Authorization'] = `Bearer ${storedToken}`;
         }
-        const response = await fetch(`http://localhost:5000${url}`, { ...options, headers });
+        const response = await fetch(`${API_BASE_URL}${url}`, { ...options, headers });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'API Request Failed');
         return data;
@@ -32,18 +35,21 @@ export const WalletProvider = ({ children }) => {
             const user = await authFetch('/api/auth/me');
             setCurrentUser(user);
 
+            // Always fetch personal wallet data for all users
+            const userWallets = await authFetch('/api/wallet/all');
+            setWallets(userWallets);
+            setWallet({ balance: userWallets.main?.balance || 0 });
+            setRewardBalance(userWallets.reward?.balance || 0);
+
+            const userTxs = await authFetch('/api/wallet/transactions');
+            setTransactions(userTxs);
+            const activeVouchers = await authFetch('/api/vouchers');
+            setVouchers(activeVouchers);
+
+            // Additionally fetch global data if admin
             if (user.role === 'admin') {
                 const globalData = await authFetch('/api/admin/data');
                 setAdminData(globalData);
-            } else {
-                const userWallet = await authFetch('/api/wallet');
-                setWallet(userWallet);
-                const userRewardWallet = await authFetch('/api/rewards');
-                setRewardBalance(userRewardWallet.balance);
-                const userTxs = await authFetch('/api/wallet/transactions');
-                setTransactions(userTxs);
-                const activeVouchers = await authFetch('/api/vouchers');
-                setVouchers(activeVouchers);
             }
         } catch (err) {
             console.error("Session fetch failed:", err);
@@ -57,10 +63,10 @@ export const WalletProvider = ({ children }) => {
         fetchUserData();
     }, [fetchUserData]);
 
-    const register = async (name, email, phone, password) => {
+    const register = async (name, email, phone, password, role) => {
         const data = await authFetch('/api/auth/register', {
             method: 'POST',
-            body: JSON.stringify({ name, email, phone, password })
+            body: JSON.stringify({ name, email, phone, password, role })
         });
         localStorage.setItem('zellet_token', data.token);
         await fetchUserData();
@@ -113,6 +119,14 @@ export const WalletProvider = ({ children }) => {
         await fetchUserData(); // Refresh wallet and txs
     };
 
+    const internalTransfer = async (fromWalletType, toWalletType, amount) => {
+        await authFetch('/api/wallet/internal-transfer', {
+            method: 'POST',
+            body: JSON.stringify({ fromWalletType, toWalletType, amount })
+        });
+        await fetchUserData(); // Refresh wallets
+    };
+
     const applyVoucher = async (code) => {
         await authFetch('/api/vouchers/apply', {
             method: 'POST',
@@ -137,6 +151,30 @@ export const WalletProvider = ({ children }) => {
         await fetchUserData(); // refresh admin data
     };
 
+    const updateUserTier = async (userId, tier) => {
+        await authFetch('/api/admin/user/tier', {
+            method: 'POST',
+            body: JSON.stringify({ userId, tier })
+        });
+        await fetchUserData();
+    };
+
+    const updateWalletStatus = async (walletId, status) => {
+        await authFetch('/api/admin/wallet/status', {
+            method: 'POST',
+            body: JSON.stringify({ walletId, status })
+        });
+        await fetchUserData();
+    };
+
+    const adjustWalletBalance = async (walletId, amount, type) => {
+        await authFetch('/api/admin/wallet/adjust', {
+            method: 'POST',
+            body: JSON.stringify({ walletId, amount, type })
+        });
+        await fetchUserData();
+    };
+
     const getUserTransactions = () => transactions;
 
     const getAllData = () => adminData || { users: [], wallets: [], transactions: [], vouchers: [], logs: [] };
@@ -155,9 +193,13 @@ export const WalletProvider = ({ children }) => {
         logout,
         addMoney,
         sendMoney,
+        internalTransfer,
         applyVoucher,
         convertPoints,
         createVoucher,
+        updateUserTier,
+        updateWalletStatus,
+        adjustWalletBalance,
         getUserTransactions,
         getAllData
     };

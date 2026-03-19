@@ -74,11 +74,4 @@ CREATE TABLE activity_logs (
     timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Performance Indexes
-CREATE INDEX idx_transactions_sender ON transactions(sender_id);
-CREATE INDEX idx_transactions_receiver ON transactions(receiver_id);
-CREATE INDEX idx_transactions_date ON transactions(transaction_date);
-CREATE INDEX idx_vouchers_code ON vouchers(voucher_code);
-CREATE INDEX idx_voucher_redemptions ON voucher_redemptions(voucher_id, user_id);
-CREATE INDEX idx_activity_logs_user ON activity_logs(user_id);
-CREATE INDEX idx_activity_logs_date ON activity_logs(timestamp);
+

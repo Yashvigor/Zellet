@@ -62,10 +62,13 @@ router.post('/google', async (req, res) => {
                 );
                 user = insertUser.rows[0];
 
-                // Create Default 'Main' Wallet
+                // Create Default Wallets (Main, Savings, Reward)
                 await clientDb.query(
-                    `INSERT INTO wallets (user_id, wallet_type, balance) VALUES ($1, $2, $3)`,
-                    [user.user_id, 'Main', 0.00]
+                    `INSERT INTO wallets (user_id, wallet_type, balance) VALUES 
+                     ($1, 'Main', 0.00),
+                     ($1, 'Savings', 0.00),
+                     ($1, 'Reward', 0.00)`,
+                    [user.user_id]
                 );
 
                 // Log Sign Up
@@ -112,10 +115,21 @@ router.post('/google', async (req, res) => {
 // --- NATIVE AUTHENTICATION --- //
 
 router.post('/register', async (req, res) => {
-    const { name, email, phone, password } = req.body;
+    const { name, email, phone, password, role } = req.body;
 
     if (!name || !email || !password) {
         return res.status(400).json({ error: 'Name, email, and password are required' });
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    // Password validation
+    if (password.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters long' });
     }
 
     const clientDb = await pool.connect();
@@ -132,17 +146,24 @@ router.post('/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
 
+        // Resolve Role
+        const allowedRoles = ['user', 'admin'];
+        const userRole = allowedRoles.includes(role) ? role : 'user';
+
         // Insert User
         const insertUser = await clientDb.query(
             `INSERT INTO users (name, email, phone, password_hash, role) VALUES ($1, $2, $3, $4, $5) RETURNING user_id, name, email, role, tier`,
-            [name, email, phone || null, passwordHash, 'user']
+            [name, email, phone || null, passwordHash, userRole]
         );
         const user = insertUser.rows[0];
 
-        // Create Default 'Main' Wallet
+        // Create Default Wallets (Main, Savings, Reward)
         await clientDb.query(
-            `INSERT INTO wallets (user_id, wallet_type, balance) VALUES ($1, $2, $3)`,
-            [user.user_id, 'Main', 0.00]
+            `INSERT INTO wallets (user_id, wallet_type, balance) VALUES 
+             ($1, 'Main', 0.00),
+             ($1, 'Savings', 0.00),
+             ($1, 'Reward', 0.00)`,
+            [user.user_id]
         );
 
         // Log Sign Up
